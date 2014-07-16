@@ -8,9 +8,20 @@
     :license: GNU AGPLv3+ or BSD
 
 """
+import sys
+PY2 = sys.version_info[0] == 2
+
+if PY2:
+    import types
+
+    def isclass(obj):
+        return isinstance(obj, (types.TypeType, types.ClassType))
+else:
+    def isclass(obj):
+        return isinstance(obj, type)
+
 import datetime
 import uuid
-import types
 
 from flask import Flask
 from nose import SkipTest
@@ -51,8 +62,8 @@ def skip_unless(condition, reason=None):
     def skip(test):
         message = 'Skipped {0}: {1}'.format(test.__name__, reason)
 
-        if isinstance(test, (types.TypeType, types.ClassType)):
-            for attr, val in test.__dict__.iteritems():
+        if isclass(test):
+            for attr, val in test.__dict__.items():
                 if callable(val) and not attr.startswith("__"):
                     setattr(test, attr, skip(val))
             return test
