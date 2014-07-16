@@ -29,6 +29,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 
 from .helpers import FlaskTestBase
 from .helpers import skip_unless
+from .helpers import unregister_fsa_session_signals
 from .helpers import TestSupport
 
 
@@ -644,6 +645,7 @@ class TestFSA(FlaskTestBase):
     def tearDown(self):
         """Drops all tables from the temporary database."""
         self.db.drop_all()
+        unregister_fsa_session_signals()
 
     def test_flask_sqlalchemy(self):
         """Tests that :class:`flask.ext.restless.APIManager` correctly exposes

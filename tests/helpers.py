@@ -67,6 +67,30 @@ def skip_unless(condition, reason=None):
     return skip
 
 
+def unregister_fsa_session_signals():
+    '''
+    When Flask-SQLAlchemy object is created, it registers some
+    session signal handlers.
+
+    In case of using both default SQLAlchemy session and Flask-SQLAlchemy
+    session (thats happening in tests), we need to unregister this handlers or
+    there will be some exceptions during test executions like:
+        AttributeError: 'Session' object has no attribute '_model_changes'
+
+    '''
+    from sqlalchemy import event
+    from flask.ext.sqlalchemy import _SessionSignalEvents
+    from sqlalchemy.orm.session import Session as SessionBase
+
+    event.remove(SessionBase, 'before_commit',
+                 _SessionSignalEvents.session_signal_before_commit)
+    event.remove(SessionBase, 'after_commit',
+                 _SessionSignalEvents.session_signal_after_commit)
+    event.remove(SessionBase, 'after_rollback',
+                 _SessionSignalEvents.session_signal_after_rollback)
+
+
+
 # This code adapted from
 # http://docs.sqlalchemy.org/en/rel_0_8/core/types.html#backend-agnostic-guid-type
 class GUID(TypeDecorator):
