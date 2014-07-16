@@ -13,6 +13,7 @@ import inspect
 import uuid
 
 from dateutil.parser import parse as parse_datetime
+from sqlalchemy import orm
 from sqlalchemy import Date
 from sqlalchemy import DateTime
 from sqlalchemy import Interval
@@ -66,6 +67,9 @@ def partition(l, condition):
 def session_query(session, model):
     """Returns a SQLAlchemy query object for the specified `model`.
 
+    If `model` has a ``query_class`` attribute, ``model.query_class`` instance
+    will be returned.
+
     If `model` has a ``query`` attribute already, ``model.query`` will be
     returned. If the ``query`` attribute is callable ``model.query()`` will be
     returned instead.
@@ -74,6 +78,11 @@ def session_query(session, model):
     created and returned.
 
     """
+    if hasattr(model, 'query_class'):
+        mapper = orm.class_mapper(model)
+        if mapper:
+            return model.query_class(mapper, session=session())
+
     if hasattr(model, 'query'):
         if callable(model.query):
             query = model.query()
