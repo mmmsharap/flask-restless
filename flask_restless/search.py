@@ -19,6 +19,7 @@ from sqlalchemy import and_ as AND
 from sqlalchemy import or_ as OR
 from sqlalchemy.ext.associationproxy import AssociationProxy
 from sqlalchemy.orm.attributes import InstrumentedAttribute
+from sqlalchemy import inspect as sqla_inspect
 
 from .helpers import session_query
 from .helpers import get_related_association_proxy_model
@@ -348,7 +349,7 @@ class QueryBuilder(object):
         return opfunc(field, argument, fieldname)
 
     @staticmethod
-    def _create_filters(model, search_params):
+    def _create_filters(model, search_params, query):
         """Returns the list of operations on `model` specified in the
         :attr:`filters` attribute on the `search_params` object.
 
@@ -376,9 +377,18 @@ class QueryBuilder(object):
                 val = getattr(model, filt.otherfield)
             # for the sake of brevity...
             create_op = QueryBuilder._create_operation
-            param = create_op(model, fname, filt.operator, val, relation)
+            if relation is not None and filt.operator not in ('has', 'any'):
+                # get relation
+                i = sqla_inspect(model)
+                r = i.relationships[relation]
+                relation_model = r.mapper.class_
+                # update query by joining related model
+                query = query.join(relation_model)
+                param = create_op(relation_model, fname, filt.operator, val)
+            else:
+                param = create_op(model, fname, filt.operator, val, relation)
             filters.append(param)
-        return filters
+        return query, filters
 
     @staticmethod
     def create_query(session, model, search_params):
@@ -407,7 +417,7 @@ class QueryBuilder(object):
         # Adding field filters
         query = session_query(session, model)
         # may raise exception here
-        filters = QueryBuilder._create_filters(model, search_params)
+        query, filters = QueryBuilder._create_filters(model, search_params, query)
         query = query.filter(search_params.junction(*filters))
 
         # Order the search. If no order field is specified in the search
