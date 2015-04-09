@@ -383,7 +383,14 @@ class QueryBuilder(object):
                 r = i.relationships[relation]
                 relation_model = r.mapper.class_
                 # update query by joining related model
-                query = query.join(relation_model)
+                condition = None
+                for local, remote in r.local_remote_pairs:
+                    if not condition:
+                        condition = local == remote
+                    else:
+                        condition = condition & (local == remote)
+
+                query = query.join(relation_model, condition)
                 param = create_op(relation_model, fname, filt.operator, val)
             else:
                 param = create_op(model, fname, filt.operator, val, relation)
