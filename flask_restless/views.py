@@ -852,9 +852,10 @@ class API(ModelView):
         if results_per_page > 0:
             # get the page number (first page is page 1)
             page_num = int(request.args.get('page', 1))
+            total_pages = int(math.ceil(num_results / results_per_page))
+            page_num = min(page_num, total_pages)
             start = (page_num - 1) * results_per_page
             end = min(num_results, start + results_per_page)
-            total_pages = int(math.ceil(num_results / results_per_page))
         else:
             page_num = 1
             start = 0
