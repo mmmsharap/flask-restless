@@ -78,18 +78,20 @@ def session_query(session, model):
     created and returned.
 
     """
-    if hasattr(model, 'query_class'):
-        mapper = orm.class_mapper(model)
-        if mapper:
-            return model.query_class(mapper, session=session())
-
     if hasattr(model, 'query'):
         if callable(model.query):
+
             query = model.query()
         else:
             query = model.query
         if hasattr(query, 'filter'):
             return query
+
+    if hasattr(model, 'query_class'):
+        mapper = orm.class_mapper(model)
+        if mapper:
+            return model.query_class(mapper, session=session())
+
     return session.query(model)
 
 
