@@ -390,7 +390,8 @@ class QueryBuilder(object):
                     else:
                         condition = condition & (local == remote)
 
-                query = query.join(relation_model, condition)
+                if not [x for x in query._join_entities if x.entity == relation_model]:
+                    query = query.join(relation_model, condition)
                 param = create_op(relation_model, fname, filt.operator, val)
             else:
                 param = create_op(model, fname, filt.operator, val, relation)
