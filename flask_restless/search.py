@@ -399,7 +399,7 @@ class QueryBuilder(object):
         return query, filters
 
     @staticmethod
-    def create_query(session, model, search_params):
+    def create_query(session, model, search_params, _ignore_order_by=False):
         """Builds an SQLAlchemy query instance based on the search parameters
         present in ``search_params``, an instance of :class:`SearchParameters`.
 
@@ -430,15 +430,27 @@ class QueryBuilder(object):
 
         # Order the search. If no order field is specified in the search
         # parameters, order by primary key.
-        if search_params.order_by:
-            for val in search_params.order_by:
-                field = getattr(model, val.field)
-                direction = getattr(field, val.direction)
-                query = query.order_by(direction())
-        else:
-            pks = primary_key_names(model)
-            pk_order = (getattr(model, field).asc() for field in pks)
-            query = query.order_by(*pk_order)
+        if not _ignore_order_by:
+            if search_params.order_by:
+                for val in search_params.order_by:
+                    field_name = val.field
+                    if '__' in field_name:
+                        field_name, field_name_in_relation = \
+                            field_name.split('__')
+                        relation = getattr(model, field_name)
+                        relation_model = relation.mapper.class_
+                        field = getattr(relation_model, field_name_in_relation)
+                        direction = getattr(field, val.direction)
+                        query = query.join(relation_model)
+                        query = query.order_by(direction())
+                    else:
+                        field = getattr(model, val.field)
+                        direction = getattr(field, val.direction)
+                        query = query.order_by(direction())
+            else:
+                pks = primary_key_names(model)
+                pk_order = (getattr(model, field).asc() for field in pks)
+                query = query.order_by(*pk_order)
 
         # Limit it
         if search_params.limit:
