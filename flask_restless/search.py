@@ -389,13 +389,13 @@ class QueryBuilder(object):
                         condition = local == remote
                     else:
                         condition = condition & (local == remote)
-
                 if not [x for x in query._join_entities if x.entity == relation_model]:
                     query = query.join(relation_model, condition)
                 param = create_op(relation_model, fname, filt.operator, val)
             else:
                 param = create_op(model, fname, filt.operator, val, relation)
             filters.append(param)
+
         return query, filters
 
     @staticmethod
@@ -441,7 +441,9 @@ class QueryBuilder(object):
                         relation_model = relation.mapper.class_
                         field = getattr(relation_model, field_name_in_relation)
                         direction = getattr(field, val.direction)
-                        query = query.join(relation_model)
+                        # check for prevent double join
+                        if not [x for x in query._join_entities if x.entity == relation_model]:
+                            query = query.join(relation_model)
                         query = query.order_by(direction())
                     else:
                         field = getattr(model, val.field)
@@ -513,6 +515,7 @@ def search(session, model, search_params):
     # False (False, 0, the empty string, the empty list, etc.).
     is_single = search_params.get('single')
     query = create_query(session, model, search_params)
+
     if is_single:
         # may raise NoResultFound or MultipleResultsFound
         return query.one()
