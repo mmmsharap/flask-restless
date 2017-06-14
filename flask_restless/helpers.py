@@ -111,7 +111,7 @@ def session_query(session, model, orm_options):
                     )
                 )
 
-                for name, options in orm_options:
+                for name, options in orm_options.iteritems():
                     if ORM_OPTIONS_MAP[name]['method'] and options == '*':
                         query = query.options(ORM_OPTIONS_MAP[name]['method']('*'))
                     else:
