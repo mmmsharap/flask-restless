@@ -22,7 +22,11 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.associationproxy import AssociationProxy
 from sqlalchemy.ext import hybrid
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import Load, lazyload as _lazyload
+from sqlalchemy.orm import Load
+from sqlalchemy.orm import lazyload
+from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import noload
+from sqlalchemy.orm import subqueryload
 from sqlalchemy.orm import ColumnProperty
 from sqlalchemy.orm import RelationshipProperty as RelProperty
 from sqlalchemy.orm.attributes import InstrumentedAttribute
@@ -65,7 +69,7 @@ def partition(l, condition):
     return [x for x in l if condition(x)], [x for x in l if not condition(x)]
 
 
-def session_query(session, model, load_only=None, defer=None, lazyload=None):
+def session_query(session, model, orm_options):
     """Returns a SQLAlchemy query object for the specified `model`.
 
     If `model` has a ``query_class`` attribute, ``model.query_class`` instance
@@ -85,20 +89,34 @@ def session_query(session, model, load_only=None, defer=None, lazyload=None):
         else:
             query = model.query
 
-            if load_only:
-                for _model, columns in load_only.iteritems():
-                    query = query.options(Load(_model).load_only(*columns))
+            if orm_options:
+                ORM_OPTIONS_MAP = dict(
+                    load_only=dict(
+                        method=None,
+                    ),
+                    defer=dict(
+                        method=None
+                    ),
+                    lazyload=dict(
+                        method=lazyload,
+                    ),
+                    joinedload=dict(
+                        method=joinedload,
+                    ),
+                    noload=dict(
+                        method=noload,
+                    ),
+                    subqueryload=dict(
+                        method=subqueryload,
+                    )
+                )
 
-            if defer:
-                for _model, columns in defer.iteritems():
-                    query = query.options(Load(_model).defer(*columns))
-
-            if lazyload:
-                if lazyload == '*':
-                    query = query.options(_lazyload('*'))
-                else:
-                    for _model, columns in lazyload.iteritems():
-                        query = query.options(Load(_model).lazyload(*columns))
+                for name, options in orm_options:
+                    if ORM_OPTIONS_MAP[name]['method'] and options == '*':
+                        query = query.options(ORM_OPTIONS_MAP[name]['method']('*'))
+                    else:
+                        for model, columns in options.iteritems():
+                            query = query.options(getattr(Load(model), name)(*columns))
 
         if hasattr(query, 'filter'):
             return query

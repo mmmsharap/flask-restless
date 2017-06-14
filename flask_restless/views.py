@@ -450,7 +450,7 @@ class API(ModelView):
                  validation_exceptions=None, results_per_page=10,
                  max_results_per_page=100, post_form_preprocessor=None,
                  preprocessors=None, postprocessors=None, primary_key=None,
-                 load_only=None, defer=None, lazyload=None,
+                 load_only=None, orm_options=None,
                  *args, **kw):
         """Instantiates this view with the specified attributes.
 
@@ -572,9 +572,7 @@ class API(ModelView):
 
         """
         super(API, self).__init__(session, model, *args, **kw)
-        self.load_only = load_only
-        self.defer = defer
-        self.lazyload = lazyload
+        self.orm_options = orm_options
         self.exclude_columns, self.exclude_relations = \
             _parse_excludes(exclude_columns)
         self.include_columns, self.include_relations = \
@@ -990,8 +988,7 @@ class API(ModelView):
         # perform a filtered search
         try:
             result = search(self.session, self.model, search_params,
-                            load_only=self.load_only,
-                            defer=self.defer, lazyload=self.lazyload)
+                            orm_options=self.orm_options)
         except NoResultFound:
             return dict(message='No result found'), 404
         except MultipleResultsFound:
