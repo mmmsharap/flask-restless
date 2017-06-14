@@ -399,7 +399,8 @@ class QueryBuilder(object):
         return query, filters
 
     @staticmethod
-    def create_query(session, model, search_params, _ignore_order_by=False):
+    def create_query(session, model, search_params, _ignore_order_by=False,
+                     load_only=None, defer=None, lazyload=None):
         """Builds an SQLAlchemy query instance based on the search parameters
         present in ``search_params``, an instance of :class:`SearchParameters`.
 
@@ -423,7 +424,7 @@ class QueryBuilder(object):
 
         """
         # Adding field filters
-        query = session_query(session, model)
+        query = session_query(session, model, load_only, defer, lazyload)
         # may raise exception here
         query, filters = QueryBuilder._create_filters(model, search_params, query)
         query = query.filter(search_params.junction(*filters))
@@ -462,7 +463,8 @@ class QueryBuilder(object):
         return query
 
 
-def create_query(session, model, searchparams):
+def create_query(session, model, searchparams,
+                 load_only=None, defer=None, lazyload=None):
     """Returns a SQLAlchemy query object on the given `model` where the search
     for the query is defined by `searchparams`.
 
@@ -481,10 +483,13 @@ def create_query(session, model, searchparams):
     """
     if isinstance(searchparams, dict):
         searchparams = SearchParameters.from_dictionary(searchparams)
-    return QueryBuilder.create_query(session, model, searchparams)
+    return QueryBuilder.create_query(session, model, searchparams,
+                                     load_only=load_only, defer=defer,
+                                     lazyload=lazyload)
 
 
-def search(session, model, search_params):
+def search(session, model, search_params,
+           load_only=None, defer=None, lazyload=None):
     """Performs the search specified by the given parameters on the model
     specified in the constructor of this class.
 
@@ -514,7 +519,8 @@ def search(session, model, search_params):
     # corresponding value is anything except those values which evaluate to
     # False (False, 0, the empty string, the empty list, etc.).
     is_single = search_params.get('single')
-    query = create_query(session, model, search_params)
+    query = create_query(session, model, search_params,
+                         load_only, defer, lazyload)
 
     if is_single:
         # may raise NoResultFound or MultipleResultsFound

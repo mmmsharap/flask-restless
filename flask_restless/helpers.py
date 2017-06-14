@@ -22,6 +22,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.associationproxy import AssociationProxy
 from sqlalchemy.ext import hybrid
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import Load
 from sqlalchemy.orm import ColumnProperty
 from sqlalchemy.orm import RelationshipProperty as RelProperty
 from sqlalchemy.orm.attributes import InstrumentedAttribute
@@ -64,7 +65,7 @@ def partition(l, condition):
     return [x for x in l if condition(x)], [x for x in l if not condition(x)]
 
 
-def session_query(session, model):
+def session_query(session, model, load_only=None, defer=None, lazyload=None):
     """Returns a SQLAlchemy query object for the specified `model`.
 
     If `model` has a ``query_class`` attribute, ``model.query_class`` instance
@@ -80,10 +81,22 @@ def session_query(session, model):
     """
     if hasattr(model, 'query'):
         if callable(model.query):
-
             query = model.query()
         else:
             query = model.query
+
+            if load_only:
+                for _model, columns in load_only.iteritems():
+                    query = query.options(Load(_model).load_only(*columns))
+
+            if defer:
+                for _model, columns in defer.iteritems():
+                    query = query.options(Load(_model).defer(*columns))
+
+            if lazyload:
+                for _model, columns in defer.lazyload():
+                    query = query.options(Load(_model).lazyload(*columns))
+
         if hasattr(query, 'filter'):
             return query
 
