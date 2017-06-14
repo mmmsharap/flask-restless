@@ -22,7 +22,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.associationproxy import AssociationProxy
 from sqlalchemy.ext import hybrid
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import Load, lazyload
+from sqlalchemy.orm import Load, lazyload as _lazyload
 from sqlalchemy.orm import ColumnProperty
 from sqlalchemy.orm import RelationshipProperty as RelProperty
 from sqlalchemy.orm.attributes import InstrumentedAttribute
@@ -95,7 +95,7 @@ def session_query(session, model, load_only=None, defer=None, lazyload=None):
 
             if lazyload:
                 if lazyload == '*':
-                    query = query.options(lazyload('*'))
+                    query = query.options(_lazyload('*'))
                 else:
                     for _model, columns in lazyload.iteritems():
                         query = query.options(Load(_model).lazyload(*columns))
