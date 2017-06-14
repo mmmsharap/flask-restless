@@ -450,7 +450,7 @@ class API(ModelView):
                  validation_exceptions=None, results_per_page=10,
                  max_results_per_page=100, post_form_preprocessor=None,
                  preprocessors=None, postprocessors=None, primary_key=None,
-                 load_only=None, defer=None, lazyload=None
+                 load_only=None, defer=None, lazyload=None,
                  *args, **kw):
         """Instantiates this view with the specified attributes.
 
