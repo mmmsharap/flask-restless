@@ -69,7 +69,7 @@ def partition(l, condition):
     return [x for x in l if condition(x)], [x for x in l if not condition(x)]
 
 
-def session_query(session, model, orm_options):
+def session_query(session, model, orm_options=None):
     """Returns a SQLAlchemy query object for the specified `model`.
 
     If `model` has a ``query_class`` attribute, ``model.query_class`` instance
