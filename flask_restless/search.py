@@ -400,7 +400,7 @@ class QueryBuilder(object):
 
     @staticmethod
     def create_query(session, model, search_params, _ignore_order_by=False,
-                     orm_options=None):
+                     orm_options=None, explicit_joins=None):
         """Builds an SQLAlchemy query instance based on the search parameters
         present in ``search_params``, an instance of :class:`SearchParameters`.
 
@@ -428,6 +428,10 @@ class QueryBuilder(object):
         # may raise exception here
         query, filters = QueryBuilder._create_filters(model, search_params, query)
         query = query.filter(search_params.junction(*filters))
+
+        for join_model in explicit_joins:
+            if not [x for x in query._join_entities if x.entity == join_model]:
+                query = query.join(join_model)
 
         # Order the search. If no order field is specified in the search
         # parameters, order by primary key.
@@ -463,7 +467,7 @@ class QueryBuilder(object):
         return query
 
 
-def create_query(session, model, searchparams, orm_options=None):
+def create_query(session, model, searchparams, orm_options=None, explicit_joins=None):
     """Returns a SQLAlchemy query object on the given `model` where the search
     for the query is defined by `searchparams`.
 
@@ -483,10 +487,10 @@ def create_query(session, model, searchparams, orm_options=None):
     if isinstance(searchparams, dict):
         searchparams = SearchParameters.from_dictionary(searchparams)
     return QueryBuilder.create_query(session, model, searchparams,
-                                     orm_options=orm_options)
+                                     orm_options=orm_options, explicit_joins=explicit_joins)
 
 
-def search(session, model, search_params, orm_options=None):
+def search(session, model, search_params, orm_options=None, explicit_joins=None):
     """Performs the search specified by the given parameters on the model
     specified in the constructor of this class.
 
@@ -516,7 +520,7 @@ def search(session, model, search_params, orm_options=None):
     # corresponding value is anything except those values which evaluate to
     # False (False, 0, the empty string, the empty list, etc.).
     is_single = search_params.get('single')
-    query = create_query(session, model, search_params, orm_options)
+    query = create_query(session, model, search_params, orm_options, explicit_joins=explicit_joins)
 
     if is_single:
         # may raise NoResultFound or MultipleResultsFound
