@@ -423,6 +423,8 @@ class QueryBuilder(object):
         documentation for :func:`_create_operation` for more information.
 
         """
+        explicit_joins = explicit_joins or []
+
         # Adding field filters
         query = session_query(session, model, orm_options)
         # may raise exception here
